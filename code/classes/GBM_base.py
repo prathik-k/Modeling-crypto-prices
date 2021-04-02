@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd 
 from sklearn.model_selection import train_test_split
 import warnings
+from classes.cryptocurrency import Crypto 
 
 class GBM_base(object):
     def __init__(self,crypto,hist_range=None):        
