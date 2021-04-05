@@ -34,7 +34,7 @@ class GBM_base(object):
         if self.pred_type=='single':
             '''
             Defining more initialization parameters of the class.
-
+            Arguments:
             hist_range: Historic range (range of data points) for training set
             train_set: The closing prices for dates within the historic range
             S0: The last price in train_set; used as a root for the future predictions        
@@ -79,6 +79,11 @@ class GBM_base(object):
                             
     
     def compute_params(self,train_set):
+        '''
+        Function to compute mu and sigma over a given training set
+        Arguments: 
+        train_set: The training set (i.e., list of closing prices as a pandas dataframe)
+        '''
         returns = ((train_set-train_set.shift(1))/train_set.shift(1)).dropna()    
         mu = returns.mean()
         sigma = returns.std()
@@ -99,6 +104,13 @@ class GBM_base(object):
 
     #Function to make predictions for the base GBM model    
     def make_predictions_base(self,n_pred_paths=2,n_pred=50):    
+        '''
+        Function to make predictions on the GBM model.
+        Arguments:
+        n_pred_paths: The number of random paths for which predictions are made
+        n_pred: Only used when the type of prediction is 'single' (ignored otherwise). Specifies the number of predictive points in the test set.
+        '''
+
         if self.pred_type=='single':           
             self.n_pred = n_pred     
             if self.n_pred+len(self.train_set)>len(self.prices):
@@ -134,9 +146,9 @@ class GBM_base(object):
 
 
     #Function to plot predictions        
-    def plot_predictions(self):
+    def plot_predictions(self,savefig=True):
         if self.pred_type=='single':
-            _,ax = plt.subplots()
+            fig,ax = plt.subplots()
             xvals = np.arange(self.n_pred)
             S_mean = np.mean(self.S,axis=0)
             ax.plot(xvals,self.S[0],c='b',label='Trials')
@@ -147,7 +159,7 @@ class GBM_base(object):
             ax.plot(xvals,S_mean,'y',label='Mean S')
             ax.fill_between(xvals,self.lower_conf,self.upper_conf,color='b', alpha=.1)
             ax.legend()
-            plt.show()       
+                  
         elif self.pred_type=='rolling':
             tot_plots = len(self.test_sets)
             cols = 2
@@ -163,14 +175,19 @@ class GBM_base(object):
                     ax[t].plot(xvals,self.S[t][i],c='b',label='_')
                 ax[t].plot(xvals,test,c='r',label='Actual S')
                 ax[t].plot(xvals,S_mean,'y',label='Mean S')
-                ax[t].legend()
-            plt.show()   
-
-
+                ax[t].legend()  
+        
+        if savefig:
+            save_path = 'results/{}_{}paths_{}'.format(self.crypto.symbol,str(self.n_pred_paths),self.pred_type)
+            fig.savefig(save_path)
+        plt.show()
 
 
     #Returning train set and validating historical range input
     def __get_train_set(self):
+        '''
+        Function to generate and return the train set for both 'single' and 'rolling' prediction cases.
+        '''
         if isinstance(self.hist_range,list) and len(self.hist_range)==2 and \
             isinstance(self.hist_range[0],int) and isinstance(self.hist_range[1],int) \
             and self.hist_range[0]>=0 and self.hist_range[1]<len(self.prices)-1:
@@ -181,6 +198,9 @@ class GBM_base(object):
         return train_set       
     
     def __get_test_sets(self):
+        '''
+        Function to generate and return multiple test sets for the rolling prediction case.
+        '''
         train_end_idx = self.hist_range[-1]
         available_test_range = len(self.prices)-train_end_idx-1
         if self.period*self.n_pred_periods<=available_test_range:
