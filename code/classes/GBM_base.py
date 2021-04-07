@@ -110,7 +110,6 @@ class GBM_base(object):
         n_pred_paths: The number of random paths for which predictions are made
         n_pred: Only used when the type of prediction is 'single' (ignored otherwise). Specifies the number of predictive points in the test set.
         '''
-
         if self.pred_type=='single':           
             self.n_pred = n_pred     
             if self.n_pred+len(self.train_set)>len(self.prices):
@@ -151,6 +150,7 @@ class GBM_base(object):
             fig,ax = plt.subplots()
             xvals = np.arange(self.n_pred)
             S_mean = np.mean(self.S,axis=0)
+            mape = self.get_error_metrics(self.test_set,self.S)
             ax.plot(xvals,self.S[0],c='b',label='Trials')
             for i in range(1,len(self.S)):
                 ax.plot(xvals,self.S[i],c='b',label='_')
@@ -158,7 +158,10 @@ class GBM_base(object):
             ax.plot(xvals,self.expected_S,'k',label='Expected S')
             ax.plot(xvals,S_mean,'y',label='Mean S')
             ax.fill_between(xvals,self.lower_conf,self.upper_conf,color='b', alpha=.1)
-            ax.legend()
+            ax.annotate('MAPE: {:.3f}'.format(mape),(0.2, 0.95),
+            xycoords='axes fraction',arrowprops=dict(facecolor='black', shrink=0.05),
+            fontsize=8,horizontalalignment='right', verticalalignment='top')
+            ax.legend(loc =3)
                   
         elif self.pred_type=='rolling':
             tot_plots = len(self.test_sets)
@@ -170,17 +173,31 @@ class GBM_base(object):
             xvals = np.arange(self.n_pred)
             for t,test in enumerate(self.test_sets):
                 S_mean = np.mean(self.S[t],axis=0)
+                mape = self.get_error_metrics(test,self.S[t])
                 ax[t].plot(self.S[t][0],label='Trials')
                 for i in range(1,len(self.S[t])):
                     ax[t].plot(xvals,self.S[t][i],c='b',label='_')
                 ax[t].plot(xvals,test,c='r',label='Actual S')
                 ax[t].plot(xvals,S_mean,'y',label='Mean S')
-                ax[t].legend()  
+                ax[t].annotate('MAPE: {:.3f}'.format(mape),(0.2, 0.95),
+                xycoords='axes fraction',arrowprops=dict(facecolor='black', shrink=0.05),
+                fontsize=8,horizontalalignment='right', verticalalignment='top')
+                ax[t].legend(loc =3)  
         
         if savefig:
             save_path = 'results/{}_{}paths_{}'.format(self.crypto.symbol,str(self.n_pred_paths),self.pred_type)
             fig.savefig(save_path)
         plt.show()
+
+    def get_error_metrics(self,actual,predicted_set):
+        S_mean = np.mean(predicted_set,axis=0)
+        mape = np.mean(np.abs((S_mean - actual)/actual))*100
+        return mape
+
+
+            #Can add other error metrics if necessary...
+
+
 
 
     #Returning train set and validating historical range input
