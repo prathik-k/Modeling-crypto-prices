@@ -70,13 +70,14 @@ class GBM_base(object):
             self.n_pred_periods = n_pred_periods
             self.test_sets = self.__get_test_sets()
             self.S = []
+            self.expected_S = []
+            self.lower_conf = []
+            self.upper_conf = []
             self.b = []
             self.W = []
             mu,sigma = self.compute_params(self.train_set)
             self.mu_vals,self.sigma_vals = [mu],[sigma]
-            self.S0_vals = [float(self.train_set.iloc[-1])]
-            
-                            
+            self.S0_vals = [float(self.train_set.iloc[-1])]                            
     
     def compute_params(self,train_set):
         '''
@@ -121,9 +122,12 @@ class GBM_base(object):
             drift = (self.mu - 0.5 * self.sigma**2) * self.pred_dates
             diffusion = self.sigma * self.W
             self.S = self.S0*np.exp(drift+diffusion)  
+            '''
             self.expected_S = self.S0*np.exp((self.mu+0.5*(self.sigma**2))*self.pred_dates)            
             self.lower_conf = np.exp(np.log(self.S0)+drift-1.96*self.sigma*np.sqrt(self.pred_dates))   
-            self.upper_conf = np.exp(np.log(self.S0)+drift+1.96*self.sigma*np.sqrt(self.pred_dates))            
+            self.upper_conf = np.exp(np.log(self.S0)+drift+1.96*self.sigma*np.sqrt(self.pred_dates))
+            '''
+            self.expected_S,self.lower_conf,self.upper_conf = self.__get_confidence_intervals(self.S0,self.mu,self.sigma,drift,self.pred_dates)
             self.test_set = self.prices[self.hist_range[1]:self.hist_range[1]+self.n_pred]
 
         elif self.pred_type=='rolling':
@@ -141,8 +145,19 @@ class GBM_base(object):
                 drift = (self.mu_vals[i] - 0.5 * self.sigma_vals[i]**2) * self.pred_dates
                 diffusion = self.sigma_vals[i] * self.W[i]
                 self.S.append(self.S0_vals[i]*np.exp(drift+diffusion))
+
+                exp_S,lower,upper = self.__get_confidence_intervals(self.S0_vals[i],self.mu_vals[i],self.sigma_vals[i],drift,self.pred_dates)
+                self.expected_S.append(exp_S)
+                self.lower_conf.append(lower)
+                self.upper_conf.append(upper)
         self.S = np.array(self.S)
 
+    def __get_confidence_intervals(self,S0,mu,sigma,drift,pred_dates):
+        expected_S = S0*np.exp((mu+0.5*(sigma**2))*pred_dates)   
+        lower_conf = np.exp(np.log(S0)+drift-1.96*sigma*np.sqrt(pred_dates))
+        upper_conf = np.exp(np.log(S0)+drift+1.96*sigma*np.sqrt(pred_dates))
+
+        return (expected_S,lower_conf,upper_conf)
 
     #Function to plot predictions        
     def plot_predictions(self,savefig=True):
@@ -193,8 +208,6 @@ class GBM_base(object):
         S_mean = np.mean(predicted_set,axis=0)
         mape = np.mean(np.abs((S_mean - actual)/actual))*100
         return mape
-
-
             #Can add other error metrics if necessary...
 
 
