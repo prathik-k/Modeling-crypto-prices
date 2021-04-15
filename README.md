@@ -1,4 +1,4 @@
-# Modeling-stock-prices
+# Modeling-crypto-prices
 Code for the project "Modeling stock prices with Brownian motion".
 
 ### The structure of the root directory is:
