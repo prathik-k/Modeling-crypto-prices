@@ -5,7 +5,6 @@ from sklearn.model_selection import train_test_split
 import warnings
 from classes.cryptocurrency import Crypto
 
-# Parent Class GBM
 class GBM_base(object):
     def __init__(self,crypto,hist_range=None,pred_type='single',period=30,n_pred_periods=10):
         '''
@@ -122,7 +121,7 @@ class GBM_base(object):
             self.pred_dates = np.arange(self.n_pred)+1
             drift = (self.mu - 0.5 * self.sigma**2) * self.pred_dates
             diffusion = self.sigma * self.W
-            self.S = self.S0*np.exp(drift + diffusion)
+            self.S = self.S0*np.exp(drift+diffusion)
             '''
             self.expected_S = self.S0*np.exp((self.mu+0.5*(self.sigma**2))*self.pred_dates)
             self.lower_conf = np.exp(np.log(self.S0)+drift-1.96*self.sigma*np.sqrt(self.pred_dates))
@@ -152,8 +151,6 @@ class GBM_base(object):
                 self.lower_conf.append(lower)
                 self.upper_conf.append(upper)
         self.S = np.array(self.S)
-
-        print(self.S.shape, self.S.size)
 
     def __get_confidence_intervals(self,S0,mu,sigma,drift,pred_dates):
         expected_S = S0*np.exp((mu+0.5*(sigma**2))*pred_dates)
@@ -255,46 +252,3 @@ class GBM_base(object):
             full_test_set = self.prices[train_end_idx:(train_end_idx+int((available_test_range//self.period)*self.period))]
             test_sets = np.split(full_test_set,self.n_pred_periods)
             return test_sets
-
-# Child Class GBM_attention from parent GBM_base
-class GBM_attention(GBM_base):
-
-    def __init__(self):
-        
-        super().__init__()
-
-    def compute_params(self):
-        super().compute_params(train_set)
-
-    def compute_brownian_params(self):
-        super().compute_brownian_params(n_pred)
-
-    def make_predictions_base(self):
-        super().make_predictions_base(n_pred_paths=2,n_pred=50)
-
-    def __get_confidence_intervals(self):
-        super().__get_confidence_intervals(S0,mu,sigma,drift,pred_dates)
-
-    def plot_predictions(self):
-        super().plot_predictions(savefig=True)
-
-    def get_error_metrics(self):
-        super().get_error_metrics(actual, predicted_set)
-
-    def __get_train_set(self):
-        super().__get_train_set
-
-    def __get_test_sets(self):
-        super().__get_test_sets
-
-
-
-
-
-
-
-
-
-
-
-
