@@ -29,8 +29,6 @@ class GBM_base(object):
         self.hist_range = hist_range
         self.train_set = self.__get_train_set()
 
-
-
         if self.pred_type=='single':
             '''
             Defining more initialization parameters of the class.
@@ -167,7 +165,6 @@ class GBM_base(object):
             xvals = np.arange(self.n_pred)
             S_mean = np.mean(self.S,axis=0)
             mape = self.get_error_metrics(self.test_set,self.S)
-            print(mape)
             ax.plot(xvals,self.S[0],c='tab:blue',label='Trials')
             for i in range(1,len(self.S)):
                 ax.plot(xvals,self.S[i],c='tab:blue',label='_')
@@ -194,7 +191,6 @@ class GBM_base(object):
             for t,test in enumerate(self.test_sets):
                 S_mean = np.mean(self.S[t],axis=0)
                 mape = self.get_error_metrics(test,self.S[t])
-                print(mape)
                 ax[t].plot(self.S[t][0],label='Trials')
                 for i in range(1,len(self.S[t])):
                     ax[t].plot(xvals,self.S[t][i],c='tab:blue',label='_')

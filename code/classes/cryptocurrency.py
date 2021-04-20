@@ -11,3 +11,8 @@ class Crypto:
     def get_df(self):
         return self.price_df
     
+    def return_prices_over_range(self,start_date='2018-05-01',end_date='2019-05-01'):
+        self.price_df['Date'] = pd.to_datetime(self.price_df['Date'])
+        mask = (self.price_df['date'] > start_date) & (self.price_df['date'] <= end_date)
+        return self.price_df.loc[mask]
+    
