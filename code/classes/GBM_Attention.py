@@ -26,7 +26,7 @@ class GBM_base(object):
 
         self.crypto = crypto
         self.pred_type = pred_type if pred_type=='rolling' else 'single'
-        self.prices = crypto.get_df['Closing Price (USD)']
+        #self.prices = crypto.get_df['Closing Price (USD)']
         self.hist_range = hist_range
         self.train_set = self.__get_train_set()
 
@@ -259,33 +259,161 @@ class GBM_base(object):
 # Child Class GBM_attention from parent GBM_base
 class GBM_attention(GBM_base):
 
-    def __init__(self):
+    def __init__(self,crypto,pred_type,hist_range, period, n_pred_periods):
         
-        super().__init__()
+        super().__init__(crypto,hist_range=None,pred_type='single',period=30,n_pred_periods=10)
 
-    def compute_params(self):
+        self.crypto = crypto
+        self.pred_type = pred_type if pred_type=='rolling' else 'single'
+        self.attention = crypto.get_df['trend']
+        self.hist_range = hist_range
+        self.train_set = self.__get_train_set()
+
+
+
+        if self.pred_type=='single':
+            '''
+            Defining more initialization parameters of the class.
+            Arguments:
+            hist_range: Historic range (range of data points) for training set
+            train_set: The closing prices for dates within the historic range
+            S0: The last price in train_set; used as a root for the future predictions
+            mu, sigma: The mean and standard deviation computed from prices in train_set
+            returns: Percent daily returns for all dates in train_set
+            '''
+            self.mu, self.sigma = self.compute_params(self.train_set)
+            self.P0 = float(self.train_set.iloc[-1])
+            '''
+            Declaring the parameters that will be used by the member functions.
+            n_pred: Number of future prediction points
+            n_pred_paths: Number of future prediction paths
+            pred_dates: Range of future dates
+            b, W: Brownian motion parameters
+            S: Set of predictions made by all paths
+            test_set: THe actual values observed in the future time range
+            lower_conf, upper_conf: Lower and upper 95% confidence intervals based on the lognormal distribution of S in the future
+            '''
+            self.n_pred = None
+            self.n_pred_paths = None
+            self.pred_dates = None
+            self.b = None
+            self.W = None
+
+            self.S = None
+            self.expected_S = None
+            self.test_set = None
+            self.lower_conf = None
+            self.upper_conf = None
+
+        elif self.pred_type=='rolling':
+            self.period = period
+            self.n_pred_periods = n_pred_periods
+            self.test_sets = self.__get_test_sets()
+            self.P = []
+            self.expected_P = []
+            self.lower_conf = []
+            self.upper_conf = []
+            self.b = []
+            self.W = []
+            mu,sigma = self.compute_params(self.train_set)
+            self.mu_vals,self.sigma_vals = [mu],[sigma]
+            self.P0_vals = [float(self.train_set.iloc[-1])]
+
+
+
+    def compute_params(self, train_set):
         super().compute_params(train_set)
 
-    def compute_brownian_params(self):
+    def compute_brownian_params(self, n_pred):
         super().compute_brownian_params(n_pred)
 
-    def make_predictions_base(self):
+    def make_predictions_base(self, n_pred_paths=2, n_pred=50):
         super().make_predictions_base(n_pred_paths=2,n_pred=50)
 
-    def __get_confidence_intervals(self):
+        if self.pred_type=='single':
+            self.n_pred = n_pred
+            if self.n_pred+len(self.train_set)>len(self.prices):
+                warnings.warn("Number of predictions desired is greater than the amount of test data available. Changing size...")
+                self.n_pred = len(self.prices)-len(self.train_set)
+            self.n_pred_paths = n_pred_paths
+            self.compute_brownian_params(self.n_pred)
+            self.pred_dates = np.arange(self.n_pred)+1
+            drift = (self.mu - 0.5 * self.sigma**2) * self.pred_dates
+            diffusion = self.sigma * self.W
+            self.P = self.P0*np.exp(drift + diffusion)
+            '''
+            self.expected_S = self.S0*np.exp((self.mu+0.5*(self.sigma**2))*self.pred_dates)
+            self.lower_conf = np.exp(np.log(self.S0)+drift-1.96*self.sigma*np.sqrt(self.pred_dates))
+            self.upper_conf = np.exp(np.log(self.S0)+drift+1.96*self.sigma*np.sqrt(self.pred_dates))
+            '''
+            self.expected_SP,self.lower_conf,self.upper_conf = self.__get_confidence_intervals(self.P0,self.mu,self.sigma,drift,self.pred_dates)
+            #self.test_set = self.prices[self.hist_range[1]:self.hist_range[1]+self.n_pred]
+
+        elif self.pred_type=='rolling':
+            for i,test in enumerate(self.test_sets):
+                if i>0:
+                    self.P0_vals.append(np.mean(self.P[i-1],axis=0))
+                    next_mu,next_sigma = self.compute_params(self.test_sets[i-1])
+                    self.mu_vals.append(next_mu)
+                    self.sigma_vals.append(next_sigma)
+                self.n_pred = len(test)
+                self.n_pred_paths = n_pred_paths
+                self.compute_brownian_params(self.n_pred)
+                self.pred_dates = np.arange(self.n_pred)+1
+
+                drift = (self.mu_vals[i] - 0.5 * self.sigma_vals[i]**2) * self.pred_dates
+                diffusion = self.sigma_vals[i] * self.W[i]
+                self.P.append(self.P0_vals[i]*np.exp(drift+diffusion))
+
+                exp_P,lower,upper = self.__get_confidence_intervals(self.P0_vals[i],self.mu_vals[i],self.sigma_vals[i],drift,self.pred_dates)
+                self.expected_P.append(exp_S)
+                self.lower_conf.append(lower)
+                self.upper_conf.append(upper)
+        self.P = np.array(self.P)
+
+        print(self.P.shape, self.P.size)
+
+
+    def __get_confidence_intervals(self,S0, mu,sigma, drift,pred_dates):
         super().__get_confidence_intervals(S0,mu,sigma,drift,pred_dates)
 
     def plot_predictions(self):
         super().plot_predictions(savefig=True)
 
-    def get_error_metrics(self):
+    def get_error_metrics(self,actual,predicted_set):
         super().get_error_metrics(actual, predicted_set)
 
     def __get_train_set(self):
         super().__get_train_set
 
+        '''
+        Function to generate and return the train set for both 'single' and 'rolling' prediction cases.
+        '''
+        if isinstance(self.hist_range,list) and len(self.hist_range)==2 and \
+            isinstance(self.hist_range[0],int) and isinstance(self.hist_range[1],int) \
+            and self.hist_range[0]>=0 and self.hist_range[1]<len(self.attention)-1:
+            train_set = self.attention[self.hist_range[0]:self.hist_range[1]]
+        else:
+            train_set = self.attention[0:200]
+            self.hist_range = [0,200]
+        return train_set
+
     def __get_test_sets(self):
         super().__get_test_sets
+
+        '''
+        Function to generate and return multiple test sets for the rolling prediction case.
+        '''
+        train_end_idx = self.hist_range[-1]
+        available_test_range = len(self.attention)-train_end_idx-1
+        if self.period*self.n_pred_periods<=available_test_range:
+            full_test_set = self.attention[train_end_idx:train_end_idx+self.period*self.n_pred_periods]
+            test_sets = np.split(full_test_set,self.n_pred_periods)
+            return test_sets
+        else:
+            full_test_set = self.attention[train_end_idx:(train_end_idx+int((available_test_range//self.period)*self.period))]
+            test_sets = np.split(full_test_set,self.n_pred_periods)
+            return test_sets
 
 
 
