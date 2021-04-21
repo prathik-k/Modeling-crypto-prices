@@ -15,4 +15,3 @@ class Crypto:
         self.price_df['Date'] = pd.to_datetime(self.price_df['Date'])
         mask = (self.price_df['Date'] > start_date) & (self.price_df['Date'] <= end_date)
         return self.price_df.loc[mask]
-    
