@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from datetime import datetime
 from sklearn.model_selection import train_test_split
 import warnings
 from classes.cryptocurrency import Crypto
@@ -24,6 +25,7 @@ class GBM_base(object):
         '''
 
         self.crypto = crypto
+        self.dates = pd.to_datetime(crypto.price_df['Date'])        
         self.pred_type = pred_type if pred_type=='rolling' else 'single'
         self.prices = crypto.get_df['Closing Price (USD)']
         self.hist_range = hist_range
@@ -225,21 +227,30 @@ class GBM_base(object):
         '''
         Function to generate and return the train set for both 'single' and 'rolling' prediction cases.
         '''
+        try:
+            start_date,end_date = pd.to_datetime(self.hist_range[0]),pd.to_datetime(self.hist_range[1])
+        except:
+            train_set = self.prices[0:200]
+            self.hist_range = [self.dates[0],self.dates[199]]
+            return train_set
+
         if isinstance(self.hist_range,list) and len(self.hist_range)==2 and \
-            isinstance(self.hist_range[0],int) and isinstance(self.hist_range[1],int) \
-            and self.hist_range[0]>=0 and self.hist_range[1]<len(self.prices)-1:
-            train_set = self.prices[self.hist_range[0]:self.hist_range[1]]
+            isinstance(self.hist_range[0],str) and isinstance(self.hist_range[1],str) \
+            and start_date>=self.dates[0] and end_date<self.dates.iloc[-1]:
+            start_idx,end_idx = self.dates[self.dates==start_date].index[0],self.dates[self.dates==end_date].index[0]
+            train_set = self.prices[start_idx:end_idx]
         else:
             train_set = self.prices[0:200]
-            self.hist_range = [0,200]
+            self.hist_range = [self.crypto.price_df['Date'][0],self.crypto.price_df['Date'][199]]
         return train_set
 
     def __get_test_sets(self):
         '''
         Function to generate and return multiple test sets for the rolling prediction case.
         '''
-        train_end_idx = self.hist_range[-1]
+        train_end_idx = self.dates[self.dates==self.hist_range[-1]].index[0].astype(int)
         available_test_range = len(self.prices)-train_end_idx-1
+
         if self.period*self.n_pred_periods<=available_test_range:
             full_test_set = self.prices[train_end_idx:train_end_idx+self.period*self.n_pred_periods]
             test_sets = np.split(full_test_set,self.n_pred_periods)
