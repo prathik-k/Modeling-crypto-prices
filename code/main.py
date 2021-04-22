@@ -2,7 +2,6 @@ from classes.cryptocurrency import Crypto
 from classes.GBM_base import GBM_base
 import argparse
 
-
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description="""Enter the cryptocurrency,
      historic range, type of prediction and prediction details.""")
@@ -46,8 +45,6 @@ if __name__=='__main__':
         gbm.make_predictions_base(n_pred_paths=n_paths)
         gbm.plot_predictions(savefig=True) if save_res.upper()=='Y' else gbm.plot_predictions(savefig=False)
     
-
-
 '''
     btc = Crypto('ETH')
     gbm = GBM_base(crypto=btc,hist_range=[0,1000],

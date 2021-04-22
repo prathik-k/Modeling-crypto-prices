@@ -156,12 +156,11 @@ class GBM_base(object):
         expected_S = S0*np.exp((mu+0.5*(sigma**2))*pred_dates)
         lower_conf = np.exp(np.log(S0)+drift-1.96*sigma*np.sqrt(pred_dates))
         upper_conf = np.exp(np.log(S0)+drift+1.96*sigma*np.sqrt(pred_dates))
-
         return (expected_S,lower_conf,upper_conf)
 
     #Function to plot predictions
     def plot_predictions(self,savefig=True):
-        crypto ='ETH ($)'
+        crypto = self.crypto.symbol.upper()+' ($)'
         if self.pred_type=='single':
             fig,ax = plt.subplots()
             xvals = np.arange(self.n_pred)
@@ -204,7 +203,6 @@ class GBM_base(object):
                 fontsize=8,horizontalalignment='right', verticalalignment='top')
                 if t==0:
                     ax[t].legend(loc =3)
-
                 ax[t].grid()
                 ax[t].set_xlabel('Days')
                 ax[t].set_ylabel(crypto)
@@ -228,14 +226,17 @@ class GBM_base(object):
         Function to generate and return the train set for both 'single' and 'rolling' prediction cases.
         '''
         try:
-            start_date,end_date = pd.to_datetime(self.hist_range[0]),pd.to_datetime(self.hist_range[1])
+            if not isinstance(self.hist_range[0],datetime) or not isinstance(self.hist_range[1],datetime):
+                start_date,end_date = pd.to_datetime(self.hist_range[0]),pd.to_datetime(self.hist_range[1])
+            else:
+                start_date,end_date = self.hist_range[0],self.hist_range[1]
         except:
             train_set = self.prices[0:200]
             self.hist_range = [self.dates[0],self.dates[199]]
             return train_set
 
         if isinstance(self.hist_range,list) and len(self.hist_range)==2 and \
-            isinstance(self.hist_range[0],str) and isinstance(self.hist_range[1],str) \
+            isinstance(self.hist_range[0],datetime) and isinstance(self.hist_range[1],datetime) \
             and start_date>=self.dates[0] and end_date<self.dates.iloc[-1]:
             start_idx,end_idx = self.dates[self.dates==start_date].index[0],self.dates[self.dates==end_date].index[0]
             train_set = self.prices[start_idx:end_idx]
