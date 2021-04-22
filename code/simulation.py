@@ -9,7 +9,7 @@ from classes.GBM_base import GBM_base
 
 
 class Simulation:
-    def __init__(self,currencies=['btc','xrp','ltc'],start_date='2018-05-01',time_steps=10):
+    def __init__(self,currencies=['btc','xrp','ltc'],start_date='2018-05-01',time_steps=15):
         self.capital = None
         self.crypto_set = {}
         self.holdings = {}
@@ -39,44 +39,62 @@ class Simulation:
         self.capital = start_capital
         while step<self.n_time_steps+1:
             p_max,n_max=0,0
+
             for c in self.crypto_set.keys():
                 prev_price = self.crypto_set[c][1][step-1]
                 curr_price = self.crypto_set[c][1][step]
-                diff = curr_price-prev_price
-                if diff>=0:
-                    if diff>p_max:
-                        p_max = diff
+                diff_perc = (curr_price-prev_price)*100/prev_price
+                if diff_perc>=0:
+                    if diff_perc>p_max:
+                        p_max = diff_perc
                         trading_curr_pos = (c,p_max)                    
                 else:
-                    if diff<n_max:
-                        n_max = diff
+                    if diff_perc<n_max:
+                        n_max = diff_perc
                         trading_curr_neg = (c,n_max)
+            
+            print(self.holdings)
             
             if p_max == 0 or abs(n_max)>abs(p_max):
                 trade_c,_ = trading_curr_neg
-                if (h/100)*self.crypto_set[trade_c][1][step-1]>abs(n_max) or self.holdings[trade_c]<=trade_amount:
+                trading_curr_price = self.crypto_set[trade_c][1][step]
+
+
+                if (h/100)*self.crypto_set[trade_c][1][step-1]>abs(n_max) or self.holdings[trade_c]*trading_curr_price-trade_amount<0:
                     print('The portfolio was held at the current state.')
                 else:
-                    self.holdings[trade_c]-= trade_amount
+                    self.holdings[trade_c] -= trade_amount/self.crypto_set[trade_c][1][step]
                     self.capital += trade_amount
-                    print('{} of {} was sold. The remaining balance of {} is {}.'.format(trade_amount,trade_c,trade_c,self.holdings[trade_c]))
+                    print('${} worth of {} was sold. The {} wallet has {} {} in it. The remaining cash balance is {}.'.format(trade_amount,
+                    trade_c,trade_c,self.holdings[trade_c],trade_c,self.capital))
                     
             elif n_max == 0 or abs(p_max)>abs(n_max):
                 trade_c,_ = trading_curr_pos
                 if (h/100)*self.crypto_set[trade_c][1][step-1]>abs(p_max) or self.capital<=trade_amount:
                     print('The portfolio was held at the current state.')
                 else:
-                    self.holdings[trade_c]+= trade_amount
+                    self.holdings[trade_c]+= trade_amount/self.crypto_set[trade_c][1][step]
                     self.capital -= trade_amount
-                    print('{} of {} was bought. The remaining balance of {} is {}.'.format(trade_amount,trade_c,trade_c,self.holdings[trade_c]))
+                    print('${} worth of {} was bought. The {} wallet has {} {} in it. The remaining cash balance is {}.'.format(trade_amount,
+                    trade_c,trade_c,self.holdings[trade_c],trade_c,self.capital))
                     
             step += 1
         
+        '''
         if self.capital<=trade_amount:
             print('Remaining capital is {}. The model lost the simulation'.format(self.capital))
         else:
-            print('Remaining capital is {}. The model succeeded in the simulation'.format(self.capital))              
-            
+            print('Remaining capital is {}. The model succeeded in the simulation'.format(self.capital)) 
+        ''' 
+        self.disp_holdings()    
+
+    def disp_holdings(self,step=-1):
+        print('\n\nPortfolio consists of:')
+        total_usd = 0
+        for c in self.crypto_set.keys():
+            total_usd += self.holdings[c]*self.crypto_set[c][1][step]
+            print('{} balance = {}..........${}'.format(c,self.holdings[c],self.holdings[c]*self.crypto_set[c][1][step]))        
+        print('Total value of the portfolio is ${}'.format(total_usd))    
     
         
         
