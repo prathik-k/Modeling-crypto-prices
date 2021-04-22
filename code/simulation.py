@@ -29,7 +29,7 @@ class Simulation:
             self.crypto_set[c] = (copy.deepcopy(curr_crypto),S_end_vals)
             self.holdings[c] = 0
     
-    def simulate(self,h=1,start_capital=1e5,trade_amount = 5e3):
+    def simulate(self,h=5,start_capital=1e5,trade_amount = 5e3):
         '''
         Function to simulate model performance. 
         Arguments:
@@ -86,7 +86,8 @@ class Simulation:
         total_usd = 0
         for c in self.crypto_set.keys():
             total_usd += self.holdings[c]*self.crypto_set[c][1][step]
-            print('{} balance = {}..........${}'.format(c,self.holdings[c],self.holdings[c]*self.crypto_set[c][1][step]))        
+            print('{} balance = {}..........${}'.format(c,self.holdings[c],self.holdings[c]*self.crypto_set[c][1][step]))    
+        total_usd += self.capital    
         print('Total value of the portfolio is ${}'.format(total_usd))    
     
         
