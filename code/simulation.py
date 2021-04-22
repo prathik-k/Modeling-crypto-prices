@@ -78,14 +78,7 @@ class Simulation:
                     print('${} worth of {} was bought. The {} wallet has {} {} in it. The remaining cash balance is {}.'.format(trade_amount,
                     trade_c,trade_c,self.holdings[trade_c],trade_c,self.capital))
                     
-            step += 1
-        
-        '''
-        if self.capital<=trade_amount:
-            print('Remaining capital is {}. The model lost the simulation'.format(self.capital))
-        else:
-            print('Remaining capital is {}. The model succeeded in the simulation'.format(self.capital)) 
-        ''' 
+            step += 1 
         self.disp_holdings()    
 
     def disp_holdings(self,step=-1):
