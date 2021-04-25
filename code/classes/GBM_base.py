@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime
+from datetime import timedelta
 from sklearn.model_selection import train_test_split
 import warnings
 from classes.cryptocurrency import Crypto
@@ -128,7 +129,9 @@ class GBM_base(object):
             self.upper_conf = np.exp(np.log(self.S0)+drift+1.96*self.sigma*np.sqrt(self.pred_dates))
             '''
             self.expected_S,self.lower_conf,self.upper_conf = self.__get_confidence_intervals(self.S0,self.mu,self.sigma,drift,self.pred_dates)
-            self.test_set = self.prices[self.hist_range[1]:self.hist_range[1]+self.n_pred]
+
+            #self.test_set = self.prices[self.hist_range[1]:self.hist_range[1]+timedelta(days=self.n_pred)]
+            self.test_set = self.crypto.return_prices_over_range(self.hist_range[1],self.hist_range[1]+timedelta(days=self.n_pred))
 
         elif self.pred_type=='rolling':
             for i,test in enumerate(self.test_sets):
