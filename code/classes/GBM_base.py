@@ -234,7 +234,7 @@ class GBM_base(object):
                 start_date,end_date = self.hist_range[0],self.hist_range[1] 
                
         except:
-            print('This check failed')
+            print('Input parameters were not valid. Default train set selected')
             train_set = self.prices[0:200]
             self.hist_range = [self.dates[0],self.dates[199]]
             return train_set
@@ -244,8 +244,10 @@ class GBM_base(object):
             start_idx,end_idx = self.dates[self.dates==start_date].index[0],self.dates[self.dates==end_date].index[0]
             train_set = self.prices[start_idx:end_idx]
         else:
+            print('Input parameters were not valid. Default train set selected')
             train_set = self.prices[0:200]
             self.hist_range = [self.dates[0],self.dates[199]]
+        
         return train_set
 
     def __get_test_sets(self):
