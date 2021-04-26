@@ -30,7 +30,7 @@ class GBM_base(object):
         self.pred_type = pred_type if pred_type=='rolling' else 'single'
         self.prices = crypto.get_df['Closing Price (USD)']
         self.hist_range = hist_range
-        self.train_set = self.__get_train_set()
+        self.train_set = self.get_train_set()
 
         if self.pred_type=='single':
             '''
@@ -128,7 +128,7 @@ class GBM_base(object):
             self.lower_conf = np.exp(np.log(self.S0)+drift-1.96*self.sigma*np.sqrt(self.pred_dates))
             self.upper_conf = np.exp(np.log(self.S0)+drift+1.96*self.sigma*np.sqrt(self.pred_dates))
             '''
-            self.expected_S,self.lower_conf,self.upper_conf = self.__get_confidence_intervals(self.S0,self.mu,self.sigma,drift,self.pred_dates)
+            self.expected_S,self.lower_conf,self.upper_conf = self.get_confidence_intervals(self.S0,self.mu,self.sigma,drift,self.pred_dates)
 
             self.test_set = self.crypto.return_prices_over_range(pd.to_datetime(self.hist_range[1]),pd.to_datetime(self.hist_range[1])+timedelta(days=self.n_pred))
 
@@ -148,13 +148,13 @@ class GBM_base(object):
                 diffusion = self.sigma_vals[i] * self.W[i]
                 self.S.append(self.S0_vals[i]*np.exp(drift+diffusion))
 
-                exp_S,lower,upper = self.__get_confidence_intervals(self.S0_vals[i],self.mu_vals[i],self.sigma_vals[i],drift,self.pred_dates)
+                exp_S,lower,upper = self.get_confidence_intervals(self.S0_vals[i],self.mu_vals[i],self.sigma_vals[i],drift,self.pred_dates)
                 self.expected_S.append(exp_S)
                 self.lower_conf.append(lower)
                 self.upper_conf.append(upper)
         self.S = np.array(self.S)
 
-    def __get_confidence_intervals(self,S0,mu,sigma,drift,pred_dates):
+    def get_confidence_intervals(self,S0,mu,sigma,drift,pred_dates):
         expected_S = S0*np.exp((mu+0.5*(sigma**2))*pred_dates)
         lower_conf = np.exp(np.log(S0)+drift-1.96*sigma*np.sqrt(pred_dates))
         upper_conf = np.exp(np.log(S0)+drift+1.96*sigma*np.sqrt(pred_dates))
@@ -167,6 +167,7 @@ class GBM_base(object):
             fig,ax = plt.subplots()
             xvals = np.arange(self.n_pred)
             S_mean = np.mean(self.S,axis=0)
+            self.expected_S = np.mean(self.expected_S,axis=0)
             mape = self.get_error_metrics(self.test_set,self.S)
             ax.plot(xvals,self.S[0],c='tab:blue',label='Trials')
             for i in range(1,len(self.S)):
@@ -223,7 +224,7 @@ class GBM_base(object):
 
 
     #Returning train set and validating historical range input
-    def __get_train_set(self):
+    def get_train_set(self):
         '''
         Function to generate and return the train set for both 'single' and 'rolling' prediction cases.
         '''

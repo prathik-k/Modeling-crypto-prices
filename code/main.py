@@ -13,7 +13,7 @@ if __name__=='__main__':
     Sample command for a rolling prediction and base model:
     python main.py --crypto btc --model base --prediction rolling --n_paths 100 --h_range "2014-06-06,2018-06-06" --n_periods 10 --period 30 --save_res Y
     Sample command for a single prediction and attention model:
-    python main.py --crypto btc --model attention --prediction rolling --n_paths 100 --h_range "2014-06-06,2018-06-06" --n_periods 10 --period 30 --save_res Y
+    python main.py --crypto xrp --model attention --prediction single --n_paths 100 --h_range "2018-9-10, 2019-10-10" --n_pred_pts 30 --save_res Y
 
     '''
     
@@ -51,8 +51,8 @@ if __name__=='__main__':
         gbm.plot_predictions(savefig=True) if save_res.upper()=='Y' else gbm.plot_predictions(savefig=False)
 
     elif pred_type=='single' and model=="attention":
-        hist_range,period,n_periods,n_pred_pts = args.h_range,args.period,args.n_periods,args.n_pred_pts
-        gbm = GBM_attention(crypto=index,hist_range=hist_range,period=period,n_pred_periods=n_periods,pred_type=pred_type)
+        hist_range,n_pred_pts = args.h_range,args.n_pred_pts
+        gbm = GBM_attention(crypto=index,hist_range=hist_range,pred_type=pred_type)
         gbm.make_predictions_base(n_pred_paths=n_paths,n_pred=n_pred_pts)
         gbm.plot_predictions(savefig=True) if save_res.upper()=='Y' else gbm.plot_predictions(savefig=False)
 
