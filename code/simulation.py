@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 class Simulation:
-    def __init__(self,currencies=['btc','xrp','ltc'],start_date='2018-05-01',time_steps=30,period=10):
+    def __init__(self,currencies=['btc','xrp','ltc'],start_date='2018-05-01',time_steps=20,period=15):
 
         self.capital = None
         self.crypto_set = {}
@@ -106,7 +106,7 @@ class Simulation:
         xl = np.arange(self.n_time_steps+1)
 
         plt.rcParams.update({'font.size': 16})
-        plt.scatter(xl,track_cap[:,0],marker='d',color='red')
+        plt.scatter(xl,track_cap[:,0],marker='d',color='red',s=80)
         plt.axhline(y = 1e5,color='k',linestyle='dashed')
         plt.xlabel('Trade number')
         plt.ylabel('Portfolio capital is USD')

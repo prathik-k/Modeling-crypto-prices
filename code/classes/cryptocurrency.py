@@ -13,7 +13,7 @@ class Crypto:
     @property
     def get_df(self):
         return self.price_df
-
+        
     @property
     def get_attention_df(self):
         return self.attention_df
@@ -26,9 +26,3 @@ class Crypto:
         mask = (self.price_df['Date'] > start_date) & (self.price_df['Date'] <= end_date)
         return self.price_df.loc[mask]
     '''
-    def return_prices_over_range(self,start_date='2018-05-01',end_date='2019-05-01'):
-        if isinstance(end_date,int):
-            end_date = start_date+timedelta(days=end_date)
-        self.price_df['Date'] = pd.to_datetime(self.price_df['Date'])
-        mask = (self.price_df['Date'] > start_date) & (self.price_df['Date'] <= end_date)
-        return self.price_df.loc[mask]['Closing Price (USD)']
