@@ -100,7 +100,6 @@ class GBM_base(object):
             b[i] = np.random.normal(0,1,self.n_pred)
         if self.pred_type=='single':
             self.b = b
-            #self.b = np.random.normal(0, 1, (self.n_pred_paths,self.n_pred))
             self.W = np.cumsum(self.b, axis=1)
         else:
             self.b.append(b)
@@ -125,11 +124,7 @@ class GBM_base(object):
             drift = (self.mu - 0.5 * self.sigma**2) * self.pred_dates
             diffusion = self.sigma * self.W
             self.S = self.S0*np.exp(drift+diffusion)
-            '''
-            self.expected_S = self.S0*np.exp((self.mu+0.5*(self.sigma**2))*self.pred_dates)
-            self.lower_conf = np.exp(np.log(self.S0)+drift-1.96*self.sigma*np.sqrt(self.pred_dates))
-            self.upper_conf = np.exp(np.log(self.S0)+drift+1.96*self.sigma*np.sqrt(self.pred_dates))
-            '''
+
             self.expected_S,self.lower_conf,self.upper_conf = self.get_confidence_intervals(self.S0,self.mu,self.sigma,drift,self.pred_dates)
             self.test_set = self.prices[self.hist_range[1]:self.hist_range[1]+self.n_pred]
 
@@ -154,10 +149,6 @@ class GBM_base(object):
                 self.lower_conf.append(lower)
                 self.upper_conf.append(upper)
         self.S = np.array(self.S)
-        print(self.S.shape)
-        #print(self.mu_vals[i].size)
-        #print(self.sigma_vals[i].size)
-
 
     def get_confidence_intervals(self,S0,mu,sigma,drift,pred_dates):
         expected_S = S0*np.exp((mu+0.5*(sigma**2))*pred_dates)
@@ -179,7 +170,6 @@ class GBM_base(object):
             ax.plot(xvals,self.test_set,c='k',label='Actual S')
             ax.plot(xvals,self.expected_S,'tab:red',label='Expected S')
             ax.plot(xvals,S_mean,'y',label='Mean S')
-            #ax.fill_between(xvals,self.lower_conf,self.upper_conf,color='b', alpha=.1)
             ax.annotate('MAPE: {:.3f}'.format(mape),(0.2, 0.95),
             xycoords='axes fraction',arrowprops=dict(facecolor='black', shrink=0.05),
             fontsize=8,horizontalalignment='right', verticalalignment='top')
@@ -226,7 +216,7 @@ class GBM_base(object):
         S_mean = np.mean(predicted_set,axis=0)
         mape = np.mean(np.abs((S_mean - actual)/actual))*100
         return mape
-            #Can add other error metrics if necessary...
+        #Can add other error metrics if necessary.
 
 
     #Returning train set and validating historical range input
