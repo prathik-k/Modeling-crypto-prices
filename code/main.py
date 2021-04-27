@@ -13,6 +13,7 @@ if __name__=='__main__':
     python main.py --crypto btc --model base --prediction rolling --n_paths 100 --h_range "2018-06-06,2019-06-06" --n_periods 10 --period 30 --save_res Y
     Sample command for a single prediction and attention model:
     python main.py --crypto btc --model attention --prediction single --n_paths 100 --h_range "2018-06-06,2019-06-06" --n_pred_pts 30 --save_res Y
+    NOTE: The earliest allowed start date for btc is 10/1/2013, while the earliest allowed start dates for XRP and LTC are 05/31/2018.
     '''
     
     parser.add_argument('--crypto',action='store',type=str,required=True,help='Cryptocurrency')
