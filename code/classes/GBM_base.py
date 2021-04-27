@@ -127,7 +127,7 @@ class GBM_base(object):
             self.S = self.S0*np.exp(drift+diffusion)
 
             self.expected_S,self.lower_conf,self.upper_conf = self.get_confidence_intervals(self.S0,self.mu,self.sigma,drift,self.pred_dates)
-            self.test_set = self.crypto.return_prices_over_range(self.hist_range[1],self.hist_range[1]+timedelta(days=self.n_pred))#self.prices[self.hist_range[1]:self.hist_range[1]+self.n_pred]
+            self.test_set = self.crypto.return_prices_over_range(self.hist_range[1],self.hist_range[1]+timedelta(days=self.n_pred))
 
         elif self.pred_type=='rolling':
             for i,test in enumerate(self.test_sets):

@@ -64,9 +64,7 @@ class GBM_attention(GBM_base):
             self.lower_conf = None
             self.upper_conf = None
 
-
     def make_predictions_base(self, n_pred_paths, n_pred):
-
         if self.pred_type=='single':
             self.n_pred = n_pred
             if self.n_pred+len(self.train_set)>len(self.prices):
