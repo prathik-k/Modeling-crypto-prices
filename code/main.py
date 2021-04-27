@@ -54,13 +54,3 @@ if __name__=='__main__':
         gbm = GBM_attention(crypto=index,hist_range=hist_range,pred_type=pred_type)
         gbm.make_predictions_base(n_pred_paths=n_paths,n_pred=n_pred_pts)
         gbm.plot_predictions(savefig=True) if save_res.upper()=='Y' else gbm.plot_predictions(savefig=False)
-
-'''
-    btc = Crypto('ETH')
-    gbm = GBM_base(crypto=btc,hist_range=[0,1000],
-    pred_type='rolling',period=30,n_pred_periods=10)
-    gbm.make_predictions_base(n_pred_paths=100,n_pred=300)
-    gbm.plot_predictions(savefig=True)
-'''
-
-#type=lambda s: [str(item) for item in s.split(',')]
