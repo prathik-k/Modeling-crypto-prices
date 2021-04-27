@@ -6,23 +6,21 @@ import argparse
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description="""Enter the cryptocurrency,
      historic range, type of prediction and prediction details.""")
-
     '''
     Sample command for a single prediction and base model:
-    python main.py --crypto btc --model base --prediction single --n_paths 100 --h_range [0,1000] --n_pred_pts 100 --save_res Y
+    python main.py --crypto btc --model base --prediction single --n_paths 100 --h_range "2018-06-06,2019-06-06" --n_pred_pts 100 --save_res Y
     Sample command for a rolling prediction and base model:
-    python main.py --crypto btc --model base --prediction rolling --n_paths 100 --h_range [0,1000] --n_periods 10 --period 30 --save_res Y
+    python main.py --crypto btc --model base --prediction rolling --n_paths 100 --h_range "2018-06-06,2019-06-06" --n_periods 10 --period 30 --save_res Y
     Sample command for a single prediction and attention model:
-    python main.py --crypto btc --model attention --prediction single --n_paths 100 --h_range [0,1000] --n_pred_pts 30 --save_res Y
-
+    python main.py --crypto btc --model attention --prediction single --n_paths 100 --h_range "2018-06-06,2019-06-06" --n_pred_pts 30 --save_res Y
     '''
     
     parser.add_argument('--crypto',action='store',type=str,required=True,help='Cryptocurrency')
     parser.add_argument('--model',action='store',type=str,required=True,help='Type of Model (Base/Attention)')
     parser.add_argument('--prediction',action='store',default='single',type=str,required=True,help='Type of prediction (single/rolling)')
     parser.add_argument('--n_paths',action='store',default=100,type=int,required=True,help='Number of random paths generated')
-    parser.add_argument('--h_range',action='store',default=[0,300], type = list,required=False,
-    help='History range for training set, specified as list like [0,1000] means taking 1000 days')
+    parser.add_argument('--h_range',action='store',default="0,300", type=lambda s: [str(item) for item in s.split(',')],required=False,
+    help='History range for training set, specified as string.')
     parser.add_argument('--period',action='store',default=30,type=int,
     required=False,help='Time period for each prediction for the rolling case')
     parser.add_argument('--n_periods',action='store',default=10,type=int,

@@ -23,6 +23,6 @@ class Crypto:
         if isinstance(end_date,int):
             end_date = start_date+timedelta(days=end_date)
         self.price_df['Date'] = pd.to_datetime(self.price_df['Date'])
-        mask = (self.price_df['Date'] > start_date) & (self.price_df['Date'] <= end_date)
-        return self.price_df.loc[mask]
+        mask = (self.price_df['Date'] > pd.to_datetime(start_date)) & (self.price_df['Date'] <= pd.to_datetime(end_date))
+        return self.price_df.loc[mask]['Closing Price (USD)']
     

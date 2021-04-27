@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 import warnings
 from classes.cryptocurrency import Crypto
+from datetime import timedelta
 
 class GBM_base(object):
     def __init__(self,crypto,hist_range=None,pred_type='single',period=30,n_pred_periods=10):
@@ -29,7 +30,7 @@ class GBM_base(object):
         self.dates = pd.to_datetime(crypto.price_df['Date'])        
         self.pred_type = pred_type if pred_type=='rolling' else 'single'
         self.prices = crypto.get_df['Closing Price (USD)']
-        self.hist_range = hist_range
+        self.hist_range = [pd.to_datetime(hist_range[0]),pd.to_datetime(hist_range[1])]
         self.train_set = self.__get_train_set()
         
 
@@ -126,7 +127,7 @@ class GBM_base(object):
             self.S = self.S0*np.exp(drift+diffusion)
 
             self.expected_S,self.lower_conf,self.upper_conf = self.get_confidence_intervals(self.S0,self.mu,self.sigma,drift,self.pred_dates)
-            self.test_set = self.prices[self.hist_range[1]:self.hist_range[1]+self.n_pred]
+            self.test_set = self.crypto.return_prices_over_range(self.hist_range[1],self.hist_range[1]+timedelta(days=self.n_pred))#self.prices[self.hist_range[1]:self.hist_range[1]+self.n_pred]
 
         elif self.pred_type=='rolling':
             for i,test in enumerate(self.test_sets):
@@ -188,8 +189,6 @@ class GBM_base(object):
             xvals = np.arange(self.n_pred)
             for t,test in enumerate(self.test_sets):
                 S_mean = np.mean(self.S[t],axis=0)
-                print(test.shape)
-                print(self.S[t].shape)
                 mape = self.get_error_metrics(test,self.S[t])
                 ax[t].plot(self.S[t][0],label='Trials')
                 for i in range(1,len(self.S[t])):

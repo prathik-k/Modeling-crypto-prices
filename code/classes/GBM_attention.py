@@ -13,20 +13,15 @@ from classes.GBM_base import GBM_base
 # Child Class GBM_attention from parent GBM_base
 class GBM_attention(GBM_base):
 
-    def __init__(self,crypto,pred_type,hist_range):
-        
-        super().__init__(crypto,hist_range=None,pred_type='single')
-
+    def __init__(self,crypto,pred_type,hist_range=None):        
+        super().__init__(crypto,hist_range,pred_type='single')
         self.crypto = crypto
         self.pred_type = pred_type if pred_type=='rolling' else 'single'
         self.prices = crypto.get_df['Closing Price (USD)']
         self.dates = pd.to_datetime(crypto.price_df['Date'])  
         self.attention = crypto.get_attention_df['attention_scaled']
-        self.hist_range = hist_range
+        self.hist_range = [pd.to_datetime(hist_range[0]),pd.to_datetime(hist_range[1])]
         self.train_set, self.train_set_a = self.__get_train_set()
-        
-
-
         self.mu_a, self.sigma_a = self.compute_params(self.train_set_a)
         self.P0 = float(self.train_set_a.iloc[-1])
         if self.pred_type=='single':
@@ -91,34 +86,12 @@ class GBM_attention(GBM_base):
             drift = (self.mu - 0.5 * (self.sigma)**2) * self.pred_dates
             diffusion = self.sigma*self.W
             self.S = self.S0*np.exp(drift+diffusion)
-            '''
-            self.expected_S = self.S0*np.exp((self.mu+0.5*(self.sigma**2))*self.pred_dates)
-            self.lower_conf = np.exp(np.log(self.S0)+drift-1.96*self.sigma*np.sqrt(self.pred_dates))
-            self.upper_conf = np.exp(np.log(self.S0)+drift+1.96*self.sigma*np.sqrt(self.pred_dates))
-            '''
-            #print(type(self.hist_range))
+
             self.expected_S,self.lower_conf,self.upper_conf = self.get_confidence_intervals(self.S0,self.mu*self.P,self.sigma*(self.P**(1/2)),drift,self.pred_dates)
-            self.test_set = self.prices[self.hist_range[1]:self.hist_range[1]+self.n_pred]
+            self.test_set = self.crypto.return_prices_over_range(pd.to_datetime(self.hist_range[1]),pd.to_datetime(self.hist_range[1])+timedelta(days=self.n_pred))
 
-    
-
-        
-        self.P = np.array(self.P)
-        
-        #df.to_csv("P.csv")
-        #self.P = preprocessing.normalize(self.P)        
-        
+        self.P = np.array(self.P)       
         self.S = np.array(self.S)
-
-        #self.S = np.reshape(self.S, (-1, self.period, self.n_pred_periods))
-        #print(self.S.shape)
-        #print(self.mu_vals[i].shape)
-        #print(self.sigma_vals[i].shape)
-        #print(self.P.shape)
-
-        #print(self.P[i].shape)
-        #print(self.S0_vals[i].shape)
-        #print(self.mu_vals[i].shape)
 
 
     def plot_predictions(self, savefig=True):
@@ -132,9 +105,7 @@ class GBM_attention(GBM_base):
             for i in range(1,len(self.S)):
                 ax.plot(xvals,self.S[i],c='tab:blue',label='_')
             ax.plot(xvals,self.test_set,c='k',label='Actual S')
-            #ax.plot(xvals,self.expected_S,'tab:red',label='Expected S')
             ax.plot(xvals,S_mean,'y',label='Mean S')
-            #ax.fill_between(xvals,self.lower_conf,self.upper_conf,color='b', alpha=.1)
             ax.annotate('MAPE: {:.3f}'.format(mape),(0.2, 0.95),
             xycoords='axes fraction',arrowprops=dict(facecolor='black', shrink=0.05),
             fontsize=8,horizontalalignment='right', verticalalignment='top')
@@ -156,15 +127,24 @@ class GBM_attention(GBM_base):
         '''
         Function to generate and return the train set for both 'single' and 'rolling' prediction cases.
         '''
+        try:
+            if not isinstance(self.hist_range[0],datetime) or not isinstance(self.hist_range[1],datetime):
+                start_date,end_date = pd.to_datetime(self.hist_range[0]),pd.to_datetime(self.hist_range[1])
+            else:
+                start_date,end_date = self.hist_range[0],self.hist_range[1]
+        except:
+            train_set = self.prices[0:200]
+            train_set_a = self.attention[0:200]
+            self.hist_range = [self.dates[0],self.dates[199]]
+            return train_set, train_set_a
+
         if isinstance(self.hist_range,list) and len(self.hist_range)==2 and \
-            isinstance(self.hist_range[0],int) and isinstance(self.hist_range[1],int) \
-            and self.hist_range[0]>=0 and self.hist_range[1]<len(self.prices)-1:
-            train_set = self.prices[self.hist_range[0]:self.hist_range[1]]
-            train_set_a = self.attention[self.hist_range[0]:self.hist_range[1]]
-        
+            start_date>=self.dates[0] and end_date<self.dates.iloc[-1]:
+            start_idx,end_idx = self.dates[self.dates==start_date].index[0],self.dates[self.dates==end_date].index[0]
+            train_set = self.prices[start_idx:end_idx]
+            train_set_a = self.attention[start_idx:end_idx]
         else:
-            train_set = self.prices[0:1000]
-            train_set_a = self.attention[0:1000]
-            self.hist_range = [0,1000]
-        
+            train_set = self.prices[0:200]
+            train_set_a = self.attention[0:200]
+            self.hist_range = [self.crypto.price_df['Date'][0],self.crypto.price_df['Date'][199]]
         return train_set, train_set_a
